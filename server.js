@@ -1,61 +1,20 @@
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-require('dotenv').config();
+const { getPosts, addPost } = require('./post');
 
-const app = express();
-app.use(express.json());
-
-const users = [];
-
-const JWT_SECRET = process.env.JWT_SECRET || 'some_secret_key';
-
-app.post('/register', async (req, res) => {
-    const { username, password } = req.body;
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = { username, password: hashedPassword };
-    users.push(user);
-
-    res.status(201).json({ message: 'Foydalanuvchi muvaffaqiyatli ro\'yxatdan o\'tdi' });
+// Postlar ro'yxatini olish
+app.get('/posts', (req, res) => {
+  const posts = getPosts();
+  res.json(posts);
 });
 
-app.post('/login', async (req, res) => {
-    const { username, password } = req.body;
+// Yangi post qo'shish
+app.post('/posts', (req, res) => {
+  const token = req.headers['authorization'];
+  const user = authenticateToken(token);
+  if (!user) {
+    return res.status(403).json({ message: 'Noto‘g‘ri token' });
+  }
 
-    const user = users.find(u => u.username === username);
-    if (!user) {
-        return res.status(400).json({ message: 'Foydalanuvchi topilmadi' });
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-        return res.status(400).json({ message: 'Parol noto‘g‘ri' });
-    }
-
-    const token = jwt.sign({ username: user.username }, JWT_SECRET, { expiresIn: '1h' });
-
-    res.json({ token });
+  const { content } = req.body;
+  addPost(user.username, content);
+  res.status(201).json({ message: 'Post qo\'shildi' });
 });
-
-app.get('/protected', authenticateToken, (req, res) => {
-    res.json({ message: `Xush kelibsiz, ${req.user.username}` });
-});
-
-// Tokenni autentifikatsiya qilish
-function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    
-    if (!token) return res.status(401).json({ message: 'Token talab qilinadi' });
-
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ message: 'Token noto‘g‘ri' });
-        req.user = user;
-        next();
-    });
-}
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server ${PORT}-portda ishlayapti`));
