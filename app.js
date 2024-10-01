@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth');
+const postRoutes = require('./routes/posts'); // Postlar marshrutlari
 const authMiddleware = require('./middleware/authMiddleware');
 const app = express();
 
@@ -19,6 +20,9 @@ mongoose.connect('mongodb://localhost:27017/mydatabase')
 
 // Autentifikatsiya marshrutlari
 app.use('/auth', authRoutes);
+
+// Post marshrutlari
+app.use('/posts', postRoutes);
 
 // Himoyalangan marshrut
 app.get('/protected', authMiddleware, (req, res) => {
