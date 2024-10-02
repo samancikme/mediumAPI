@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth');
-const postRoutes = require('./routes/posts'); // Postlar marshrutlari
+const authorRoutes = require('./routes/author');
 const authMiddleware = require('./middleware/authMiddleware');
 const app = express();
 
@@ -9,8 +9,11 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
+// .env faylidan muhim o'zgaruvchilarni yuklash
+require('dotenv').config();
+
 // MongoDB ga ulanish
-mongoose.connect('mongodb://localhost:27017/mydatabase')
+mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('MongoDB ga muvaffaqiyatli ulandik');
   })
@@ -21,8 +24,8 @@ mongoose.connect('mongodb://localhost:27017/mydatabase')
 // Autentifikatsiya marshrutlari
 app.use('/auth', authRoutes);
 
-// Post marshrutlari
-app.use('/posts', postRoutes);
+// Mualliflar marshrutlari
+app.use('/authors', authorRoutes);
 
 // Himoyalangan marshrut
 app.get('/protected', authMiddleware, (req, res) => {
